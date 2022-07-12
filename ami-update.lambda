@@ -1,0 +1,44 @@
+import json
+import boto3
+import time
+import sys
+import logging 
+
+asObj = boto3.client('autoscaling')
+ec2Obj = boto3.client('ec2')
+
+
+def lambda_handler(event, context):
+
+
+    ASG = asObj.describe_auto_scaling_groups(AutoScalingGroupNames=['AUTOSCALE_GROUP_NAME'])
+    sourceInstanceId = ASG.get('AutoScalingGroups')[0]['Instances'][0]['InstanceId']
+    print sourceInstanceId
+    Date=time.strftime("%d%m%y")
+    Time=time.strftime("%H%M%S")
+    amiName = "Automated_%s_%s" % (Date, Time)
+    configName = "Automated_%s_%s" % (Date, Time)
+    
+
+
+    CreateNewImage = ec2Obj.create_image(
+        InstanceId = sourceInstanceId,
+        Name = amiName,
+        Description = 'Automatically Created Image from Lambda Service',
+        NoReboot = True)
+    Image = []
+    Image.append(CreateNewImage)
+    def getCreatedID(Image):
+        for i in Image:
+            ID = i['ImageId']
+            return ID
+    AMINewID = getCreatedID(Image)
+    CreateNewConfig = asObj.create_launch_configuration(
+        LaunchConfigurationName = configName,
+        ImageId = AMINewID,
+        InstanceId = sourceInstanceId)
+    print configName
+    
+    updateASG = asObj.update_auto_scaling_group(
+        AutoScalingGroupName = 'AUTOSCALE_GROUP_NAME',
+        LaunchConfigurationName = configName)

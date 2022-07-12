@@ -1,0 +1,14 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /var/www/html/latest/
+hooks:
+  BeforeInstall:
+    - location: /BeforeInstall.sh
+      timeout: 300
+      runas: root
+  AfterInstall:
+    - location: /AfterInstall.sh
+      timeout: 1600
+      runas: root
